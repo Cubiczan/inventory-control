@@ -8,6 +8,7 @@ on:
 jobs:
   mirror:
     runs-on: ubuntu-latest
+    continue-on-error: true
     steps:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
         with:
@@ -17,6 +18,14 @@ jobs:
         env:
           PAT: ${{ secrets.GITHUB_PAT_ZANMAKER }}
         run: |
+          if [ -z "$PAT" ]; then
+            echo "::warning::Skipping second GitHub mirror: GITHUB_PAT_ZANMAKER is not configured"
+            exit 0
+          fi
+          if ! git ls-remote "https://zan-maker:${PAT}@github.com/zan-maker/inventory-control.git" >/dev/null 2>&1; then
+            echo "::warning::Skipping second GitHub mirror: target is unavailable or credentials are invalid"
+            exit 0
+          fi
           git remote add github2 "https://zan-maker:${PAT}@github.com/zan-maker/inventory-control.git"
           git push --mirror github2
 
@@ -24,5 +33,13 @@ jobs:
         env:
           PAT: ${{ secrets.CODEBERG_PAT }}
         run: |
+          if [ -z "$PAT" ]; then
+            echo "::warning::Skipping Codeberg mirror: CODEBERG_PAT is not configured"
+            exit 0
+          fi
+          if ! git ls-remote "https://ShyamDesigan:${PAT}@codeberg.org/ShyamDesigan/inventory-control.git" >/dev/null 2>&1; then
+            echo "::warning::Skipping Codeberg mirror: target is unavailable or credentials are invalid"
+            exit 0
+          fi
           git remote add codeberg "https://ShyamDesigan:${PAT}@codeberg.org/ShyamDesigan/inventory-control.git"
           git push --mirror codeberg
